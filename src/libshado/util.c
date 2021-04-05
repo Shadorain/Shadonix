@@ -1,6 +1,8 @@
 #include <syscall.h>
 #include "../include/libshado.h"
 
+#define PAGE_SIZE 4096
+
 unsigned long str_len (char *s) {
     int count = 0;
     while (*s++) count++;
@@ -52,4 +54,30 @@ int str_to_int (char *s) {
         result += *s - '0';
     }
     return neg ? -result : result;
+}
+
+void *mem_alloc (int size) {
+    unsigned long cur_brk = (unsigned long)mem_brk(0);
+    int num_pages = size / PAGE_SIZE;
+
+    size = (num_pages + 1) * PAGE_SIZE;
+
+    mem_brk ((void*)(cur_brk + size));
+    return (void*)cur_brk;
+}
+
+void mem_set (void *p, char n, size_t size) {
+    char *b = (char*)p;
+    for (int i=0; i<size; i++) *b++ = n;
+}
+
+void mem_cpy (void *dest, void *src, size_t size) {
+    char *d = (char*)dest;
+    char *s = (char*)src;
+
+    for (int i=0; i<size; i++) d[i] = s[i];
+}
+
+void str_cpy (char *dest, char *src) {
+    mem_cpy(dest, src, str_len(src)+1);
 }

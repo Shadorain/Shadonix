@@ -53,3 +53,18 @@ int ps_execute (char *filename) {
 void *mem_brk (void *p) {
     return (void*)_syscall(SYS_brk, p, 0, 0, 0, 0, 0);
 }
+
+int sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+               struct timeval *timeout) {
+    return _syscall(SYS_select, (void*)(long)nfds, readfds, writefds, exceptfds, timeout, 0);
+}
+
+void *mem_mmap(void *addr, size_t length, int prot, int flags, int fd,
+               off_t offset) {
+    return (void*)_syscall(SYS_mmap, addr, (void*)length, (void*)(long)prot,
+           (void*)(long)flags, (void*)(long)fd, (void*)offset);
+}
+
+int mem_munmap(void *addr, size_t length) {
+    return _syscall(SYS_munmap, addr, (void*)length, 0, 0, 0, 0);
+}

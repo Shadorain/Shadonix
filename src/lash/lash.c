@@ -1,8 +1,114 @@
 #include "../include/libshado.h"
 #include "../include/printf.h"
 #include <fcntl.h>
+#include <linux/input-event-codes.h>
 
 unsigned long console_fd = 0;
+
+struct event_file {
+    struct event_file *next;
+    int fd;
+    char name[64];
+};
+
+struct input_event {
+    struct timeval time;
+    unsigned short type;
+    unsigned short code;
+    unsigned int value;
+};
+
+struct mouse_pos_info {
+    int x;
+    int y;
+    int max_x;
+    int max_y;
+};
+
+struct event_file *event_list_head;
+struct mouse_pos_info mouse_pos;
+
+void load_event_devs () {
+    event_list_head = NULL;
+    mouse_pos.x = 0;
+    mouse_pos.y = 0;
+    mouse_pos.max_x = 1920;
+    mouse_pos.max_y = 1080;
+
+    for (int i=0; i<20; i++) {
+        char name[64];
+        sprintf(name, "/dev/input/event%d", i);
+        int fd = file_open(name, O_RDONLY);
+        if (fd < 0) break; /* not found */
+
+        struct event_file *e = malloc(sizeof(struct event_file));
+        str_cpy(e->name, name);
+        e->fd = fd;
+        e->next = event_list_head;
+        event_list_head = e;
+    }
+}
+
+bool handle_event (struct event_file *e, struct input_event *event) {
+    if (event->type == EV_REL) { /* mouse event */
+        if (event->code == REL_X) {
+            int new_x = mouse_pos.x + event->value;
+            if (new_x >= 0 && new_x <= mouse_pos.max_y)
+                mouse_pos.x = new_x;
+        }
+        if (event->code == REL_Y) {
+            int new_y = mouse_pos.y + event->value;
+            if (new_y >= 0 && new_y <= mouse_pos.max_x)
+                mouse_pos.y = new_y;
+        }
+        printf("\rMOUSE_POS: %d - %d             ", mouse_pos.x, mouse_pos.y);
+    }
+    if (event->type == EV_KEY) {
+        printf("INPUT: %s - %d - %d - %d\n", e->name, event->code,
+                event->type, event->value);
+        if (event->code == KEY_END) { 
+            printf("Exiting...\n");
+            return true;
+        }
+    }
+    return false;
+}
+
+void handle_events () {
+    printf("Listening for events...\n");
+    while (true) {
+        fd_set fds;
+        FD_ZERO(&fds);
+
+        struct event_file *e = event_list_head;
+        while (e) {
+            FD_SET(e->fd, &fds);
+            e = e->next;
+        }
+
+        int ret = sys_select(event_list_head->fd+1, &fds, NULL, NULL, NULL);
+        if (ret < 0) {
+            printf("SELECT FAILED!\n");
+            return;
+        }
+
+        e = event_list_head;
+        while (e) {
+            if (FD_ISSET(e->fd, &fds)) {
+                char buf[1024];
+                int r = file_read(e->fd, buf, sizeof(buf));
+                int pos = 0;
+                while (pos < r) {
+                    struct input_event *event = (struct input_event*)(buf+pos);
+                    pos += sizeof(struct input_event);
+                    
+                    if (handle_event(e, event)) return;
+                }
+            }
+            e = e->next;
+        }
+    }
+}
 
 void console_open () {
     console_fd = file_open("/dev/console", O_RDWR | O_NDELAY);
@@ -62,15 +168,20 @@ void proc_cmd (char *cmd) {
         sys_reboot();
     }
 
-    if (str_eq(cmd, "brk")) {
+    if (str_eq(cmd, "alloc")) {
         int size = 0;
         if (arg) size = str_to_int(arg);
 
-        void *new_val = (void*)(cur_brk + size);
-        void *addr = mem_brk(new_val);
-        printf("BRK(%X) = %X\n", new_val, addr);
+        void *p = malloc(size);
+        printf("Returned ptr: %lX\n", p);
+        print_heap();
+    }
 
-        cur_brk = (unsigned long)mem_brk(0);
+    if (str_eq(cmd, "free")) {
+        /* free ADDR */
+        unsigned long addr = hex_str_to_ulong(arg);
+        free((void*)addr);
+        print_heap();
     }
 
     if (str_eq(cmd, "store")) {
@@ -92,16 +203,20 @@ void proc_cmd (char *cmd) {
 
         printf("Fetched %d from %X\n", *p, addr);
     }
+
+    if (str_eq(cmd, "events")) handle_events();
 }
 
 int main () {
     str_print("\033[H\033[J");
-    str_print("Sh v0.0.0.2\n");
-    cur_brk = (long)mem_brk(0);
-    printf("BRK: %X\n", cur_brk);
-    str_print("|=-> ");
+    str_print("Sh v0.0.0.3\n");
 
+    print_heap();
     console_open();
+    load_event_devs();
+    print_heap();
+
+    str_print("|=-> ");
     while (1) {
         char buf[1024];
         line_read(buf, sizeof(buf));
