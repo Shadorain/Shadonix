@@ -4,12 +4,16 @@
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/select.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 extern unsigned long _syscall (int num, void *a0, void *a1, void *a2, void *a3, void *a4, void *a5);
 
 extern unsigned long file_open (char *fn, int flags);
 extern unsigned long file_read (unsigned long fd, char *buff, unsigned long size);
 extern unsigned long file_write (unsigned long fd, char *buf, unsigned long len);
+extern int file_stat(const char *pathname, struct stat *statbuf);
+extern int file_close(unsigned long fd);
 
 extern unsigned long sys_nanosleep (struct timespec *req, struct timespec *rem);
 extern unsigned long sys_reboot ();
@@ -42,4 +46,4 @@ extern void *mem_mmap(void *addr, size_t length, int prot, int flags, int fd,
 extern int mem_munmap(void *addr, size_t length);
 extern void *malloc(size_t size);
 extern void free(void *addr);
-void print_heap ();
+extern void print_heap ();

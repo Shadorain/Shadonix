@@ -68,3 +68,11 @@ void *mem_mmap(void *addr, size_t length, int prot, int flags, int fd,
 int mem_munmap(void *addr, size_t length) {
     return _syscall(SYS_munmap, addr, (void*)length, 0, 0, 0, 0);
 }
+
+int file_stat(const char *pathname, struct stat *statbuf) {
+    return _syscall(SYS_stat, (void*)pathname, statbuf, 0, 0, 0, 0);
+}
+
+int file_close(unsigned long fd) {
+    return _syscall(SYS_close, (void*)fd, 0, 0, 0, 0, 0);
+}

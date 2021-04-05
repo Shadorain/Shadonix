@@ -155,61 +155,86 @@ int line_read (char *buf, int max) {
 
 unsigned long cur_brk = 0;
 
-void proc_cmd (char *cmd) {
-    int end = str_pos(cmd, ' ');
-    char *arg = 0;
-    if (end != -1) {
-        cmd[end] = 0;
-        arg = cmd + end + 1;
+char **cmd_to_args(char *cmd) {
+    int num_spaces = 0;
+    int len = str_len(cmd);
+    for (int i=0; i<len; i++) {
+        if (cmd[i] == ' ') {
+            cmd[i] = 0;
+            num_spaces++;
+        }
     }
+    char **argv = malloc(sizeof(char*) * (num_spaces+1));
+    int cur_item = 0;
+    argv[0] = cmd;
+    for (int i=0; i<len; i++)
+        if (cmd[i] == 0)
+            argv[++cur_item] = cmd + i + 1;
+    argv[++cur_item] = 0;
+    return argv;
+}
+
+bool find_cmd (char *full_path) {
+    struct stat statbuf;
+    char bin_path[64];
+    if (file_stat(bin_path, &statbuf) == 0) return true;
+    str_cpy(full_path, bin_path);
+    sprintf(full_path, "/bin/%s", full_path);
+    if (file_stat(full_path, &statbuf) == 0) return true;
+    return false;
+}
+
+void proc_cmd (char *cmd) {
+    char **argv = cmd_to_args(cmd);
 
     if (str_eq(cmd, "reboot")) {
         str_print("\n\n*** REBOOTING ***\n");
         sys_reboot();
-    }
-
-    if (str_eq(cmd, "alloc")) {
+    } else if (str_eq(cmd, "alloc")) {
         int size = 0;
-        if (arg) size = str_to_int(arg);
+        if (argv[1]) size = str_to_int(argv[1]);
 
         void *p = malloc(size);
         printf("Returned ptr: %lX\n", p);
         print_heap();
-    }
-
-    if (str_eq(cmd, "free")) {
+    } else if (str_eq(cmd, "free")) {
         /* free ADDR */
-        unsigned long addr = hex_str_to_ulong(arg);
+        unsigned long addr = hex_str_to_ulong(argv[1]);
         free((void*)addr);
         print_heap();
-    }
-
-    if (str_eq(cmd, "store")) {
-        end = str_pos(arg, ' ');
-        arg[end] = 0;
-
-        char *val = arg + end + 1;
-        unsigned long addr = hex_str_to_ulong(arg);
+    } else if (str_eq(cmd, "store")) {
+        char *val = argv[2]; /* second arg */
+        unsigned long addr = hex_str_to_ulong(argv[1]);
         int n = str_to_int(val);
         printf("Storing %d at %X\n", n , addr); 
 
         int *p = (int*)addr;
         *p = n;
-    }
-
-    if (str_eq(cmd, "fetch")) {
-        unsigned long addr = hex_str_to_ulong(arg);
+    } else if (str_eq(cmd, "fetch")) {
+        unsigned long addr = hex_str_to_ulong(argv[1]);
         int *p = (int*)addr;
 
         printf("Fetched %d from %X\n", *p, addr);
+    } else if (str_eq(cmd, "events")) handle_events();
+    else {
+        struct stat statbuf;
+        char full_path[64];
+        str_cpy(full_path, cmd);
+        if (find_cmd(full_path)) {
+            long pid = ps_fork();
+            if (pid == 0) {
+                char *envp[1];
+                envp[0] = 0;
+                ps_execve(full_path, argv, envp);
+            }
+        }
     }
-
-    if (str_eq(cmd, "events")) handle_events();
+    free(argv);
 }
 
 int main () {
     str_print("\033[H\033[J");
-    str_print("Sh v0.0.0.3\n");
+    str_print("Sh v0.0.0.4\n");
 
     print_heap();
     console_open();
@@ -220,8 +245,11 @@ int main () {
     while (1) {
         char buf[1024];
         line_read(buf, sizeof(buf));
+        if (str_eq("", buf)) {
+            str_print("|=-> ");
+            continue;
+        }
         proc_cmd(buf);
-
         str_print ("|=-> ");
     }
 }

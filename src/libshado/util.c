@@ -81,3 +81,7 @@ void mem_cpy (void *dest, void *src, size_t size) {
 void str_cpy (char *dest, char *src) {
     mem_cpy(dest, src, str_len(src)+1);
 }
+
+void _exit (int code) {
+    return _syscall(SYS_exit, (void*)(long)code, 0, 0, 0, 0, 0);
+}

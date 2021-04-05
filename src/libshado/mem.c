@@ -188,6 +188,7 @@ void free(void *up) {
         /* wasn't on heap: unmap it */
         int ret = mem_munmap(p, chunk_size(p)+HEADER_SIZE);
         if (DEBUG_MEM) printf("MEM: free mapped, returned %d\n", ret);
+        return;
     }
 
     chunk_unset_flags(p, FLAG_MEM_ALLOCATED);
