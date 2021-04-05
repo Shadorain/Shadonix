@@ -184,7 +184,7 @@ bool find_cmd (char *full_path) {
     return false;
 }
 
-void proc_cmd (char *cmd) {
+bool proc_cmd (char *cmd) {
     char **argv = cmd_to_args(cmd);
 
     if (str_eq(cmd, "reboot")) {
@@ -225,7 +225,16 @@ void proc_cmd (char *cmd) {
             if (pid == 0) {
                 char *envp[1];
                 envp[0] = 0;
-                ps_execve(full_path, argv, envp);
+                int ret =ps_execve(full_path, argv, envp);
+                printf("Ret: %d\n", ret);
+                free(argv);
+                _exit(ret);
+                return false;
+            } else {
+                siginfo_t info;
+                int status = 0;
+                int ret = sys_waitid(P_PID, pid, &info, WEXITED);
+                printf("Process returned: %s\n", ret);
             }
         }
     }

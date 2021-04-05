@@ -85,3 +85,9 @@ void str_cpy (char *dest, char *src) {
 void _exit (int code) {
     return _syscall(SYS_exit, (void*)(long)code, 0, 0, 0, 0, 0);
 }
+
+int errno_value = 0;
+
+int *__errno_location () {
+    return &errno_value;
+}

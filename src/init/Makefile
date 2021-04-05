@@ -2,7 +2,7 @@ TARGET=init
 CSOURCES=$(shell echo *.c)
 
 OBJECTS = $(CSOURCES:.c=_c.o)
-LDFLAGS= -lshado -L$(SHADONIX_PATH)/lib
+LDFLAGS= -lshado -lfb -L$(SHADONIX_PATH)/lib
 
 all: $(TARGET)
 

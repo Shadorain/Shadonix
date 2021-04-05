@@ -54,25 +54,34 @@ void *mem_brk (void *p) {
     return (void*)_syscall(SYS_brk, p, 0, 0, 0, 0, 0);
 }
 
-int sys_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+int sys_select (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                struct timeval *timeout) {
     return _syscall(SYS_select, (void*)(long)nfds, readfds, writefds, exceptfds, timeout, 0);
 }
 
-void *mem_mmap(void *addr, size_t length, int prot, int flags, int fd,
+void *mem_mmap (void *addr, size_t length, int prot, int flags, int fd,
                off_t offset) {
     return (void*)_syscall(SYS_mmap, addr, (void*)length, (void*)(long)prot,
            (void*)(long)flags, (void*)(long)fd, (void*)offset);
 }
 
-int mem_munmap(void *addr, size_t length) {
+int mem_munmap (void *addr, size_t length) {
     return _syscall(SYS_munmap, addr, (void*)length, 0, 0, 0, 0);
 }
 
-int file_stat(const char *pathname, struct stat *statbuf) {
+int file_stat (const char *pathname, struct stat *statbuf) {
     return _syscall(SYS_stat, (void*)pathname, statbuf, 0, 0, 0, 0);
 }
 
-int file_close(unsigned long fd) {
+int file_close (unsigned long fd) {
     return _syscall(SYS_close, (void*)fd, 0, 0, 0, 0, 0);
+}
+
+int file_ioctl (unsigned long fd, unsigned long cmd, void *arg) {
+    return _syscall(SYS_ioctl, (void*)fd, (void*)cmd, arg, 0, 0, 0);
+
+}
+
+int sys_waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options) {
+    return _syscall(SYS_waitid, (void*)(long)idtype, (void*)(long)id, infop, (void*)(long)options, 0, 0);
 }
