@@ -1,8 +1,8 @@
 SHELL ?= /bin/sh
 CC ?= gcc
-FLAGS ?= -nostdlib -I../include
-SHADONIX_PATH ?= ~/Shadonix
-DESTDIR ?= ~/Shadonix
+FLAGS ?= -nostdlib -I../include -fno-stack-protector -fPIC
+SHADONIX_PATH ?= /home/shadow/Shadonix
+DESTDIR ?= /home/shadow/Shadonix
 
 PREFIX ?= $(DESTDIR)
 BINDIR ?= $(PREFIX)/sbin
