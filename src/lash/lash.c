@@ -1,6 +1,7 @@
 #include "../include/libshado.h"
 #include "../include/printf.h"
 #include <fcntl.h>
+#include <unistd.h>
 #include <linux/input-event-codes.h>
 
 unsigned long console_fd = 0;
@@ -239,6 +240,7 @@ bool proc_cmd (char *cmd) {
         }
     }
     free(argv);
+    return true;
 }
 
 int main () {
