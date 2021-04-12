@@ -245,22 +245,25 @@ bool proc_cmd (char *cmd) {
 
 int main () {
     str_print("\033[H\033[J");
-    str_print("Sh v0.0.0.4\n");
+    str_print("Sh v0.0.0.5\n");
 
-    print_heap();
-    console_open();
-    load_event_devs();
-    print_heap();
+    /* print_heap(); */
+    /* console_open(); */
+    /* load_event_devs(); */
+    /* print_heap(); */
 
     str_print("|=-> ");
     while (1) {
         char buf[1024];
         line_read(buf, sizeof(buf));
+
         if (str_eq("", buf)) {
             str_print("|=-> ");
             continue;
         }
-        proc_cmd(buf);
+        if (!proc_cmd(buf))
+            return 0;
+
         str_print ("|=-> ");
     }
 }

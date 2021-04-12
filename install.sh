@@ -13,4 +13,4 @@ sudo mount ~/Shadonix/shadonix_rootfs /mnt/Shadonix -t ext4 -o loop &&
 sudo rsync -vr --progress ~/Shadonix/* /mnt/Shadonix --exclude shadonix_rootfs &&
 sudo rm /mnt/Shadonix/LICENSE /mnt/Shadonix/README.md /mnt/Shadonix/install.sh &&
 sudo umount /mnt/Shadonix &&
-qemu-system-x86_64 -m 1024 -boot d -enable-kvm -smp 3 -hda ~/Shadonix/shadonix_rootfs -kernel ~/Shadonix/boot/vmlinuz-linux -initrd ~/Shadonix/boot/initramfs-linux.img -serial stdio -append "root=/dev/sda console=ttyS0 panic=0"
+qemu-system-x86_64 -m 1024 -boot d -enable-kvm -smp 3 -hda ~/Shadonix/shadonix_rootfs -kernel ~/Shadonix/boot/vmlinuz-linux -initrd ~/Shadonix/boot/initramfs-linux.img -serial mon:stdio -append "root=/dev/sda console=ttyS0 panic=0" -nographic
